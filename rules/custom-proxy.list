@@ -1,0 +1,6 @@
+# 自定义代理规则，一行一条。
+# 以下为保留域名和文档地址示例；去掉行首的 # 后才会生效。
+#
+# DOMAIN-SUFFIX,example.net
+# DOMAIN-KEYWORD,proxy-example
+# IP-CIDR6,2001:db8::/32,no-resolve

@@ -1,0 +1,30 @@
+name: Validate proxy rules
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Build generated rules
+        run: python scripts/build.py
+
+      - name: Validate configuration and rules
+        run: python scripts/check.py
+
+      - name: Verify committed dist files are current
+        run: git diff --exit-code -- dist/

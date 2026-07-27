@@ -1,0 +1,6 @@
+# 自定义直连规则，一行一条。
+# 以下为保留域名和文档地址示例；去掉行首的 # 后才会生效。
+#
+# DOMAIN,example.com
+# DOMAIN-SUFFIX,example.org
+# IP-CIDR,192.0.2.0/24,no-resolve

@@ -1,0 +1,140 @@
+[repository]
+owner = "Lafinyu"
+name = "my-proxy-rules"
+branch = "main"
+
+[policies.mihomo]
+proxy = "其他代理"
+ai_proxy = "AI代理"
+direct = "DIRECT"
+reject = "REJECT"
+final = "DIRECT"
+
+[mihomo_groups.ai_proxy]
+type = "select"
+keywords = ["美国", "日本", "新加坡", "英国", "加拿大", "德国"]
+
+[mihomo_groups.proxy]
+type = "url-test"
+keywords = ["台湾", "香港"]
+url = "https://www.gstatic.com/generate_204"
+interval = 300
+
+[policies.shadowrocket]
+proxy = "PROXY"
+ai_proxy = "🇺🇸/美国/02/"
+direct = "DIRECT"
+reject = "REJECT"
+final = "DIRECT"
+
+[[rules]]
+id = "custom-direct"
+type = "local"
+path = "rules/custom-direct.list"
+policy = "direct"
+enabled = false
+
+[[rules]]
+id = "custom-proxy"
+type = "local"
+path = "rules/custom-proxy.list"
+policy = "proxy"
+enabled = true
+
+[[rules]]
+id = "custom-reject"
+type = "local"
+path = "rules/custom-reject.list"
+policy = "reject"
+enabled = false
+
+[[rules]]
+id = "cn"
+type = "quixoticheart"
+upstream_name = "cn"
+policy = "direct"
+enabled = true
+
+[[rules]]
+id = "cncidr"
+type = "quixoticheart"
+upstream_name = "cncidr"
+policy = "direct"
+enabled = true
+
+[[rules]]
+id = "apple-cn"
+type = "quixoticheart"
+upstream_name = "apple-cn"
+policy = "direct"
+enabled = true
+
+[[rules]]
+id = "apple-proxy"
+type = "quixoticheart"
+upstream_name = "apple-proxy"
+policy = "proxy"
+enabled = true
+
+[[rules]]
+id = "ai"
+type = "quixoticheart"
+upstream_name = "ai"
+policy = "ai_proxy"
+enabled = true
+
+[[rules]]
+id = "gits"
+type = "quixoticheart"
+upstream_name = "gits"
+policy = "proxy"
+enabled = true
+
+[[rules]]
+id = "google"
+type = "quixoticheart"
+upstream_name = "google"
+policy = "proxy"
+enabled = true
+
+[[rules]]
+id = "netflix"
+type = "quixoticheart"
+upstream_name = "netflix"
+policy = "proxy"
+enabled = true
+
+[[rules]]
+id = "proxy"
+type = "quixoticheart"
+upstream_name = "proxy"
+policy = "proxy"
+enabled = true
+
+[[rules]]
+id = "spotify"
+type = "quixoticheart"
+upstream_name = "spotify"
+policy = "proxy"
+enabled = true
+
+[[rules]]
+id = "tld-proxy"
+type = "quixoticheart"
+upstream_name = "tld-proxy"
+policy = "proxy"
+enabled = true
+
+[[rules]]
+id = "twitch"
+type = "quixoticheart"
+upstream_name = "twitch"
+policy = "proxy"
+enabled = true
+
+[[rules]]
+id = "youtube"
+type = "quixoticheart"
+upstream_name = "youtube"
+policy = "proxy"
+enabled = true

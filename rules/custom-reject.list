@@ -1,0 +1,5 @@
+# 自定义拒绝规则，一行一条。
+# 以下为保留域名示例；去掉行首的 # 后才会生效。
+#
+# DOMAIN,invalid.example
+# DOMAIN-KEYWORD,tracking-example
