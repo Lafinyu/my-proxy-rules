@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build Mihomo and Shadowrocket rule fragments from config/rules.toml."""
+"""Build Mihomo and Shadowrocket configurations from project sources."""
 
 from __future__ import annotations
 
@@ -12,10 +12,12 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "config" / "rules.toml"
+SHADOWROCKET_BASE_PATH = ROOT / "config" / "shadowrocket-base.conf"
 DIST_DIR = ROOT / "dist"
 ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 BASE_POLICY_KEYS = {"direct", "proxy", "reject"}
 RULE_TYPES = {"local", "quixoticheart"}
+SHADOWROCKET_RULES_PLACEHOLDER = "{{GENERATED_RULES}}"
 
 
 class BuildError(ValueError):
@@ -216,6 +218,40 @@ def rule_url(
     )
 
 
+def load_shadowrocket_base(path: Path = SHADOWROCKET_BASE_PATH) -> str:
+    """Load and validate the non-rule Shadowrocket configuration template."""
+    try:
+        content = path.read_text(encoding="utf-8")
+    except OSError as exc:
+        raise BuildError(f"无法读取 Shadowrocket 基础配置 {path}: {exc}") from exc
+
+    content = content.replace("\r\n", "\n").replace("\r", "\n")
+    placeholder_count = content.count(SHADOWROCKET_RULES_PLACEHOLDER)
+    if placeholder_count != 1:
+        raise BuildError(
+            "config/shadowrocket-base.conf 必须且只能包含一个 "
+            f"{SHADOWROCKET_RULES_PLACEHOLDER} 占位符。"
+        )
+
+    rule_section = re.search(
+        r"(?ms)^\[Rule\]\s*\n(.*?)(?=^\[[^\]]+\]\s*$|\Z)",
+        content,
+    )
+    if rule_section is None:
+        raise BuildError("config/shadowrocket-base.conf 缺少 [Rule] 区段。")
+
+    rule_body_lines = [
+        line.strip()
+        for line in rule_section.group(1).splitlines()
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    if rule_body_lines != [SHADOWROCKET_RULES_PLACEHOLDER]:
+        raise BuildError(
+            "config/shadowrocket-base.conf 的 [Rule] 区段只能包含生成占位符。"
+        )
+    return content
+
+
 def render_mihomo_script(data: dict[str, Any]) -> str:
     """Render a Clash Verge Rev global extension script."""
     repository = get_repository(data)
@@ -321,18 +357,12 @@ def render_mihomo_script(data: dict[str, Any]) -> str:
 
 
 def render_shadowrocket(data: dict[str, Any]) -> str:
-    """Render the Shadowrocket [Rule] fragment."""
+    """Render a complete Shadowrocket configuration."""
     repository = get_repository(data)
     policies = get_policies(data, "shadowrocket")
     final_policy = get_final_policy(data, "shadowrocket")
 
-    lines = [
-        "# 此文件由 scripts/build.py 自动生成。",
-        "# 请勿直接编辑。",
-        "# 请修改 config/rules.toml 或 rules/ 后重新构建。",
-        "",
-        "[Rule]",
-    ]
+    rule_lines: list[str] = []
     for rule in enabled_rules(data):
         policy_key = str(rule["policy"])
         if policy_key not in policies:
@@ -342,9 +372,21 @@ def render_shadowrocket(data: dict[str, Any]) -> str:
             )
         url = rule_url(rule, "shadowrocket", repository)
         policy = policies[policy_key]
-        lines.append(f"RULE-SET,{url},{policy}")
-    lines.append(f"FINAL,{final_policy}")
-    return "\n".join(lines) + "\n"
+        rule_lines.append(f"RULE-SET,{url},{policy}")
+    rule_lines.append(f"FINAL,{final_policy}")
+
+    base = load_shadowrocket_base().strip()
+    rendered = base.replace(
+        SHADOWROCKET_RULES_PLACEHOLDER,
+        "\n".join(rule_lines),
+    )
+    return (
+        "# 此文件由 scripts/build.py 自动生成。\n"
+        "# 请勿直接编辑。\n"
+        "# 规则请修改 config/rules.toml 或 rules/；其余配置请修改 "
+        "config/shadowrocket-base.conf。\n\n"
+        f"{rendered}\n"
+    )
 
 
 def render_outputs(data: dict[str, Any]) -> dict[Path, str]:

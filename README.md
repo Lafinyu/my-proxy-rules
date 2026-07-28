@@ -1,10 +1,11 @@
 # my-proxy-rules
 
-`my-proxy-rules` 用一份按顺序维护的规则清单，同时生成 Clash Verge Rev 全局扩展脚本和 Shadowrocket 规则片段。项目只保存自己的补充规则；第三方规则通过远程 URL 引用，不复制、不重新发布。
+`my-proxy-rules` 用一份按顺序维护的规则清单，同时生成 Clash Verge Rev 全局扩展脚本和可直接选用的完整 Shadowrocket 配置。项目只保存自己的补充规则；第三方规则通过远程 URL 引用，不复制、不重新发布。
 
 ## 设计逻辑
 
 - `config/rules.toml` 是规则分类、策略和顺序的唯一配置来源。
+- `config/shadowrocket-base.conf` 保存 Shadowrocket 的非规则配置。
 - `rules/` 保存本项目自己的补充规则。
 - `scripts/build.py` 按 TOML 中从上到下的顺序生成两个客户端的配置。
 - `scripts/check.py` 检查配置、规则格式、敏感信息和生成文件一致性。
@@ -21,7 +22,8 @@ my-proxy-rules/
 ├── README.md
 ├── .gitignore
 ├── config/
-│   └── rules.toml
+│   ├── rules.toml
+│   └── shadowrocket-base.conf
 ├── rules/
 │   ├── custom-direct.list
 │   ├── custom-proxy.list
@@ -85,6 +87,8 @@ final = "DIRECT"
 `final` 控制未匹配流量的最终策略。Mihomo 生成 `MATCH,DIRECT`，Shadowrocket 生成 `FINAL,DIRECT`。
 
 Mihomo 全局脚本从每个订阅的 `config.proxies` 中按关键词筛选节点。`AI代理` 是手动选择的 `select` 组，`其他代理` 是每 300 秒测速的 `url-test` 组。某组没有匹配节点时，脚本不创建该组，也不添加指向它的规则，相应流量最终走 `DIRECT`。Shadowrocket 的 AI 规则使用指定策略，其他代理规则使用内置 `PROXY`，随首页当前选中的节点切换。
+
+Shadowrocket 的 `[General]`、`[Host]` 和 `[URL Rewrite]` 位于 `config/shadowrocket-base.conf`。其中 `[Rule]` 必须保留唯一的 `{{GENERATED_RULES}}` 占位符，构建时会用 `rules.toml` 生成的规则和 `FINAL` 替换它。不要在基础配置的 `[Rule]` 中手工添加其他规则；需要补充规则时使用 `rules/` 和 `rules.toml`。
 
 每个 `[[rules]]` 表示一项规则：
 
@@ -153,7 +157,19 @@ python scripts/build.py
 python scripts/check.py
 ```
 
-构建会覆盖 `dist/mihomo-global-script.js` 和 `dist/shadowrocket-rules.conf`。检查脚本不会修改文件，而是重新在内存中生成预期内容并与 `dist/` 比较；如果不一致，会提示先重新构建。
+构建会覆盖 `dist/mihomo-global-script.js` 和 `dist/shadowrocket-rules.conf`。后者是由 Shadowrocket 基础配置与统一规则合成的完整配置。检查脚本不会修改文件，而是重新在内存中生成预期内容并与 `dist/` 比较；如果不一致，会提示先重新构建。
+
+在 Git Bash 中也可以用 `generate.sh` 一次完成构建、检查、暂存、提交和推送：
+
+```bash
+./generate.sh "Update proxy rules"
+```
+
+脚本要求暂存区在运行前为空，避免把已有暂存内容混入自动提交。提交说明可以省略，默认使用 `Update proxy rules`。如果 Python 不在常规命令路径中，可以指定解释器：
+
+```bash
+PYTHON_BIN="/path/to/python" ./generate.sh "Update proxy rules"
+```
 
 ## Clash Verge Rev 使用方法
 
@@ -171,13 +187,15 @@ python scripts/check.py
 
 ## Shadowrocket 使用方法
 
-`dist/shadowrocket-rules.conf` 是 `[Rule]` 片段。AI 规则引用现有的 `🇺🇸/美国/02/` 策略，其他代理规则使用 Shadowrocket 内置 `PROXY`，跟随首页当前选中的节点。可以把规则合并到现有 Shadowrocket 配置，或在所用配置管理方式支持远程配置时使用其 GitHub Raw URL：
+`dist/shadowrocket-rules.conf` 是可直接选用的完整配置，包含 `[General]`、生成的 `[Rule]`、`[Host]` 和 `[URL Rewrite]`。AI 规则引用现有的 `🇺🇸/美国/02/` 策略，其他代理规则使用 Shadowrocket 内置 `PROXY`，跟随首页当前选中的节点。
+
+在 Shadowrocket 中通过以下 GitHub Raw URL 下载配置，然后将它设为当前配置：
 
 ```text
 https://raw.githubusercontent.com/{owner}/{name}/refs/heads/{branch}/dist/shadowrocket-rules.conf
 ```
 
-片段不包含代理服务器或策略组定义。请确认现有 Shadowrocket 配置中存在名称完全一致的 AI 策略，并注意合并后只保留一条符合预期的 `FINAL,DIRECT`。
+配置不包含代理服务器、订阅地址或访问凭据，节点继续由 Shadowrocket 应用管理。请确认应用中存在名称完全一致的 AI 策略。仓库更新并重新构建、提交和推送后，在 Shadowrocket 中更新这份远程配置即可同步；生成内容只包含一条 `FINAL,DIRECT`。
 
 ## 安全与维护
 

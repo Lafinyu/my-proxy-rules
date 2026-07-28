@@ -283,7 +283,10 @@ def main() -> int:
     data = load_toml(errors)
     if data is not None:
         local_paths = validate_rules(data, errors)
-        check_sensitive_files([CONFIG_PATH, *local_paths], errors)
+        check_sensitive_files(
+            [CONFIG_PATH, build.SHADOWROCKET_BASE_PATH, *local_paths],
+            errors,
+        )
         check_generated_files(data, errors)
 
     if errors:
