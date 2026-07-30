@@ -4,3 +4,12 @@
 # DOMAIN,example.com
 # DOMAIN-SUFFIX,example.org
 # IP-CIDR,192.0.2.0/24,no-resolve
+
+DOMAIN-SUFFIX,bing.com
+DOMAIN-SUFFIX,nih.gov
+DOMAIN-SUFFIX,visualstudio.com
+DOMAIN-SUFFIX,microsoft.com
+DOMAIN-SUFFIX,xboxlive.com
+DOMAIN-SUFFIX,xboxservices.com
+DOMAIN-KEYWORD,wiley
+DOMAIN-KEYWORD,sciencedirect

@@ -5,12 +5,19 @@ set -euo pipefail
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT_DIR"
 
-commit_message="${*:-Update proxy rules}"
-
 fail() {
   printf '错误：%s\n' "$1" >&2
   exit 1
 }
+
+create_new_commit=false
+commit_message=""
+if (( $# > 0 )); then
+  create_new_commit=true
+  commit_message="$*"
+  [[ -n "${commit_message//[[:space:]]/}" ]] ||
+    fail "新提交的 commit message 不能为空。"
+fi
 
 supports_python_311() {
   "$@" -c 'import sys; raise SystemExit(sys.version_info < (3, 11))' \
@@ -37,6 +44,8 @@ fi
 
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 ||
   fail "当前目录不是 Git 仓库。"
+git rev-parse --verify HEAD >/dev/null 2>&1 ||
+  fail "当前分支还没有可供替换的提交。"
 git remote get-url origin >/dev/null 2>&1 ||
   fail "没有配置 origin 远程仓库。"
 
@@ -46,6 +55,11 @@ fi
 
 printf '使用：'
 "${PYTHON_CMD[@]}" --version
+if [[ "$create_new_commit" == true ]]; then
+  printf '提交模式：创建新提交（%s）\n' "$commit_message"
+else
+  printf '提交模式：替换当前提交\n'
+fi
 
 printf '\n[1/5] 构建配置\n'
 "${PYTHON_CMD[@]}" scripts/build.py
@@ -77,13 +91,23 @@ printf '\n将要提交的文件：\n'
 git diff --cached --name-status
 
 printf '\n[4/5] 提交\n'
+force_push=false
+if [[ "$create_new_commit" == false ]]; then
+  force_push=true
+fi
 if git diff --cached --quiet; then
   printf '没有需要提交的改动，跳过 commit。\n'
-else
+elif [[ "$create_new_commit" == true ]]; then
   git commit -m "$commit_message"
+else
+  git commit --amend --no-edit
 fi
 
 printf '\n[5/5] 推送\n'
-git push
+if [[ "$force_push" == true ]]; then
+  git push --force-with-lease
+else
+  git push
+fi
 
 printf '\n完成。\n'

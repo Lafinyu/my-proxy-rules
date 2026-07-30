@@ -75,6 +75,7 @@ type = "url-test"
 keywords = ["台湾", "香港"]
 url = "https://www.gstatic.com/generate_204"
 interval = 300
+tolerance = 100
 
 [policies.shadowrocket]
 proxy = "PROXY"
@@ -86,7 +87,7 @@ final = "DIRECT"
 
 `final` 控制未匹配流量的最终策略。Mihomo 生成 `MATCH,DIRECT`，Shadowrocket 生成 `FINAL,DIRECT`。
 
-Mihomo 全局脚本从每个订阅的 `config.proxies` 中按关键词筛选节点。`AI代理` 是手动选择的 `select` 组，`其他代理` 是每 300 秒测速的 `url-test` 组。某组没有匹配节点时，脚本不创建该组，也不添加指向它的规则，相应流量最终走 `DIRECT`。Shadowrocket 的 AI 规则使用指定策略，其他代理规则使用内置 `PROXY`，随首页当前选中的节点切换。
+Mihomo 全局脚本从每个订阅的 `config.proxies` 中按关键词筛选节点。`AI代理` 是手动选择的 `select` 组，`其他代理` 是每 300 秒测速的 `url-test` 组，并设置 `tolerance = 100`，只有候选节点至少快 100 毫秒时才切换，减少延迟小幅波动造成的来回切换。某组没有匹配节点时，脚本不创建该组，也不添加指向它的规则，相应流量最终走 `DIRECT`。Shadowrocket 的 AI 规则使用指定策略，其他代理规则使用内置 `PROXY`，随首页当前选中的节点切换。
 
 Shadowrocket 的 `[General]`、`[Host]` 和 `[URL Rewrite]` 位于 `config/shadowrocket-base.conf`。其中 `[Rule]` 必须保留唯一的 `{{GENERATED_RULES}}` 占位符，构建时会用 `rules.toml` 生成的规则和 `FINAL` 替换它。不要在基础配置的 `[Rule]` 中手工添加其他规则；需要补充规则时使用 `rules/` 和 `rules.toml`。
 
@@ -159,16 +160,22 @@ python scripts/check.py
 
 构建会覆盖 `dist/mihomo-global-script.js` 和 `dist/shadowrocket-rules.conf`。后者是由 Shadowrocket 基础配置与统一规则合成的完整配置。检查脚本不会修改文件，而是重新在内存中生成预期内容并与 `dist/` 比较；如果不一致，会提示先重新构建。
 
-在 Git Bash 中也可以用 `generate.sh` 一次完成构建、检查、暂存、提交和推送：
+在 Git Bash 中也可以用 `generate.sh` 一次完成构建、检查、暂存、提交和推送。只调整具体规则时不传提交说明，脚本会 amend 当前提交并使用 `--force-with-lease` 安全覆盖远端最新版本，不增加提交数量：
 
 ```bash
-./generate.sh "Update proxy rules"
+./generate.sh
 ```
 
-脚本要求暂存区在运行前为空，避免把已有暂存内容混入自动提交。提交说明可以省略，默认使用 `Update proxy rules`。如果 Python 不在常规命令路径中，可以指定解释器：
+调整项目功能或特性时传入提交说明，脚本才会创建并正常推送一个新提交：
 
 ```bash
-PYTHON_BIN="/path/to/python" ./generate.sh "Update proxy rules"
+./generate.sh "Add a new feature"
+```
+
+脚本要求暂存区在运行前为空，避免把已有暂存内容混入自动提交。如果 Python 不在常规命令路径中，可以指定解释器：
+
+```bash
+PYTHON_BIN="/path/to/python" ./generate.sh
 ```
 
 ## Clash Verge Rev 使用方法

@@ -2,6 +2,14 @@
 // 请勿直接编辑；请修改 config/rules.toml 或 rules/ 后重新构建。
 
 const RULE_PROVIDERS = {
+  "my-proxy-rules-custom-direct": {
+    "type": "http",
+    "behavior": "classical",
+    "format": "text",
+    "url": "https://raw.githubusercontent.com/Lafinyu/my-proxy-rules/refs/heads/main/rules/custom-direct.list",
+    "path": "./ruleset/my-proxy-rules/custom-direct.list",
+    "interval": 86400
+  },
   "my-proxy-rules-custom-proxy": {
     "type": "http",
     "behavior": "classical",
@@ -64,6 +72,22 @@ const RULE_PROVIDERS = {
     "format": "text",
     "url": "https://raw.githubusercontent.com/QuixoticHeart/rule-set/refs/heads/ruleset/meta/google.list",
     "path": "./ruleset/my-proxy-rules/google.list",
+    "interval": 86400
+  },
+  "my-proxy-rules-microsoft-cn": {
+    "type": "http",
+    "behavior": "classical",
+    "format": "text",
+    "url": "https://raw.githubusercontent.com/QuixoticHeart/rule-set/refs/heads/ruleset/meta/microsoft-cn.list",
+    "path": "./ruleset/my-proxy-rules/microsoft-cn.list",
+    "interval": 86400
+  },
+  "my-proxy-rules-microsoft": {
+    "type": "http",
+    "behavior": "classical",
+    "format": "text",
+    "url": "https://raw.githubusercontent.com/QuixoticHeart/rule-set/refs/heads/ruleset/meta/microsoft.list",
+    "path": "./ruleset/my-proxy-rules/microsoft.list",
     "interval": 86400
   },
   "my-proxy-rules-netflix": {
@@ -139,11 +163,16 @@ const PROXY_GROUPS = [
       "香港"
     ],
     "url": "https://www.gstatic.com/generate_204",
-    "interval": 300
+    "interval": 300,
+    "tolerance": 100
   }
 ];
 
 const RULE_ENTRIES = [
+  {
+    "rule": "RULE-SET,my-proxy-rules-custom-direct,DIRECT",
+    "required_group": null
+  },
   {
     "rule": "RULE-SET,my-proxy-rules-custom-proxy,其他代理",
     "required_group": "其他代理"
@@ -174,6 +203,14 @@ const RULE_ENTRIES = [
   },
   {
     "rule": "RULE-SET,my-proxy-rules-google,其他代理",
+    "required_group": "其他代理"
+  },
+  {
+    "rule": "RULE-SET,my-proxy-rules-microsoft-cn,DIRECT",
+    "required_group": null
+  },
+  {
+    "rule": "RULE-SET,my-proxy-rules-microsoft,其他代理",
     "required_group": "其他代理"
   },
   {
@@ -231,6 +268,9 @@ function createProxyGroups(config) {
     if (group.type === "url-test") {
       generatedGroup.url = group.url;
       generatedGroup.interval = group.interval;
+      if (group.tolerance !== undefined) {
+        generatedGroup.tolerance = group.tolerance;
+      }
     }
     generatedGroups.push(generatedGroup);
     activeGroupNames.add(group.name);

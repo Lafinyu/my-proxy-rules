@@ -19,6 +19,7 @@ type = "url-test"
 keywords = ["台湾", "香港"]
 url = "https://www.gstatic.com/generate_204"
 interval = 300
+tolerance = 100
 
 [policies.shadowrocket]
 proxy = "PROXY"
@@ -32,7 +33,7 @@ id = "custom-direct"
 type = "local"
 path = "rules/custom-direct.list"
 policy = "direct"
-enabled = false
+enabled = true
 
 [[rules]]
 id = "custom-proxy"
@@ -94,6 +95,20 @@ enabled = true
 id = "google"
 type = "quixoticheart"
 upstream_name = "google"
+policy = "proxy"
+enabled = true
+
+[[rules]]
+id = "microsoft-cn"
+type = "quixoticheart"
+upstream_name = "microsoft-cn"
+policy = "direct"
+enabled = true
+
+[[rules]]
+id = "microsoft"
+type = "quixoticheart"
+upstream_name = "microsoft"
 policy = "proxy"
 enabled = true
 

@@ -187,6 +187,15 @@ def get_mihomo_groups(
             if not isinstance(interval, int) or isinstance(interval, bool) or interval <= 0:
                 raise BuildError(f"{context}.interval 必须是正整数。")
             group["interval"] = interval
+            tolerance = raw_group.get("tolerance")
+            if tolerance is not None:
+                if (
+                    not isinstance(tolerance, int)
+                    or isinstance(tolerance, bool)
+                    or tolerance < 0
+                ):
+                    raise BuildError(f"{context}.tolerance 必须是非负整数。")
+                group["tolerance"] = tolerance
         groups.append(group)
     return groups
 
@@ -331,6 +340,9 @@ def render_mihomo_script(data: dict[str, Any]) -> str:
         "    if (group.type === \"url-test\") {\n"
         "      generatedGroup.url = group.url;\n"
         "      generatedGroup.interval = group.interval;\n"
+        "      if (group.tolerance !== undefined) {\n"
+        "        generatedGroup.tolerance = group.tolerance;\n"
+        "      }\n"
         "    }\n"
         "    generatedGroups.push(generatedGroup);\n"
         "    activeGroupNames.add(group.name);\n"
